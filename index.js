@@ -10,6 +10,12 @@ import { connectToDatabase } from "./db/connection.js";
 import { typeDefs } from "./typeDefs/index.js";
 import { resolvers } from "./resolvers/index.js";
 import applyDirective from "./directives/index.js";
+import introspectionRestrictionMiddleware from "./utils/introspection-restriction-middleware.js";
+import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHttpServer";
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageProductionDefault,
+} from "@apollo/server/plugin/landingPage/default";
 
 const { json } = pkg;
 
@@ -17,6 +23,10 @@ const app = express();
 const httpServer = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
+
+if (process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED) {
+  app.use("*", introspectionRestrictionMiddleware);
+}
 
 // Create the schema
 let schema = makeExecutableSchema({
@@ -30,6 +40,14 @@ schema = applyDirective(schema);
 // Initialize ApolloServer with the schema
 const server = new ApolloServer({
   schema,
+  introspection: process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED,
+  playground: process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED,
+  plugins: [
+    process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED === true
+      ? ApolloServerPluginLandingPageLocalDefault()
+      : ApolloServerPluginLandingPageProductionDefault(),
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+  ],
   context: ({ req, res }) => {
     return { req, res };
   },
