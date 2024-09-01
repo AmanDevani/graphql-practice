@@ -1,5 +1,5 @@
 import getDecodedToken from "./getDecodedToken.js";
-import CustomError from "../utils/CustomError.js";
+import CustomError from "./CustomError.js";
 import { User } from "../schema/index.js";
 
 const getUserById = async (token) => {
