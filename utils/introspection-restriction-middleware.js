@@ -2,7 +2,7 @@ import pkg from "lodash";
 const { get } = pkg;
 
 const introspectionRestrictionMiddleware = (req, res, next) => {
-  const query = req?.query?.query || req?.body?.query || "";
+  const query = req?.body?.query || ""; // Use req.body.query since GraphQL queries are usually sent in POST body
 
   // Retrieve the introspection restriction secret from headers
   const introspectionHeader = get(
@@ -13,7 +13,7 @@ const introspectionRestrictionMiddleware = (req, res, next) => {
   // If the query contains '__schema' and the secret is incorrect or missing, block introspection
   if (
     query.includes("__schema") &&
-    introspectionHeader !== GRAPHQL_INTROSPECTION_RESTRICTION.SECRET
+    introspectionHeader !== process.env.GRAPHQL_INTROSPECTION_RESTRICTION_SECRET
   ) {
     return res
       .status(403)

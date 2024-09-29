@@ -24,8 +24,12 @@ const httpServer = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
 
+// Apply body parser middleware before everything else to ensure req.body is populated
+app.use(cors());
+app.use(json()); // body-parser to handle JSON requests
+
 if (process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED) {
-  app.use("*", introspectionRestrictionMiddleware);
+  app.use("/graphql", introspectionRestrictionMiddleware); // Apply middleware only to /graphql route
 }
 
 // Create the schema
@@ -43,7 +47,7 @@ const server = new ApolloServer({
   introspection: process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED,
   playground: process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED,
   plugins: [
-    process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED === true
+    process.env.GRAPHQL_INTROSPECTION_RESTRICTION_ENABLED === "true"
       ? ApolloServerPluginLandingPageLocalDefault()
       : ApolloServerPluginLandingPageProductionDefault(),
     ApolloServerPluginDrainHttpServer({ httpServer }),
@@ -56,11 +60,9 @@ const server = new ApolloServer({
 // Start the ApolloServer
 await server.start();
 
-// Apply middleware
+// Apply Apollo middleware
 app.use(
   "/graphql",
-  cors(),
-  json(),
   expressMiddleware(server, {
     context: ({ req, res }) => {
       return { req, res };
